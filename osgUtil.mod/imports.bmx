@@ -1,0 +1,47 @@
+' osg openthread module import list
+
+Strict
+
+ModuleInfo "CC_OPTS: -fexceptions" 
+ModuleInfo "CC_OPTS: -DOT_LIBRARY_STATIC"
+ModuleInfo "CC_OPTS: -DOSG_LIBRARY_STATIC"
+?Win32
+ModuleInfo "CC_OPTS: -D_GLIBCXX_USE_WCHAR_T"
+?
+
+Import "../osg.mod/include/*.h"
+
+Import "../osg.mod/src/osgUtil/CubeMapGenerator.cpp"
+Import "../osg.mod/src/osgUtil/CullVisitor.cpp"
+Import "../osg.mod/src/osgUtil/DelaunayTriangulator.cpp"
+Import "../osg.mod/src/osgUtil/DisplayRequirementsVisitor.cpp"
+Import "../osg.mod/src/osgUtil/DrawElementTypeSimplifier.cpp"
+Import "../osg.mod/src/osgUtil/EdgeCollector.cpp"
+Import "../osg.mod/src/osgUtil/GLObjectsVisitor.cpp"
+Import "../osg.mod/src/osgUtil/HalfWayMapGenerator.cpp"
+Import "../osg.mod/src/osgUtil/HighlightMapGenerator.cpp"
+Import "../osg.mod/src/osgUtil/IntersectionVisitor.cpp"
+Import "../osg.mod/src/osgUtil/IntersectVisitor.cpp"
+Import "../osg.mod/src/osgUtil/LineSegmentIntersector.cpp"
+Import "../osg.mod/src/osgUtil/Optimizer.cpp"
+Import "../osg.mod/src/osgUtil/PlaneIntersector.cpp"
+Import "../osg.mod/src/osgUtil/PolytopeIntersector.cpp"
+Import "../osg.mod/src/osgUtil/PositionalStateContainer.cpp"
+Import "../osg.mod/src/osgUtil/RenderBin.cpp"
+Import "../osg.mod/src/osgUtil/RenderLeaf.cpp"
+Import "../osg.mod/src/osgUtil/RenderStage.cpp"
+Import "../osg.mod/src/osgUtil/ReversePrimitiveFunctor.cpp"
+Import "../osg.mod/src/osgUtil/SceneView.cpp"
+Import "../osg.mod/src/osgUtil/Simplifier.cpp"
+Import "../osg.mod/src/osgUtil/SmoothingVisitor.cpp"
+Import "../osg.mod/src/osgUtil/SceneGraphBuilder.cpp"
+Import "../osg.mod/src/osgUtil/StateGraph.cpp"
+Import "../osg.mod/src/osgUtil/Statistics.cpp"
+Import "../osg.mod/src/osgUtil/TangentSpaceGenerator.cpp"
+Import "../osg.mod/src/osgUtil/Tessellator.cpp"
+Import "../osg.mod/src/osgUtil/TransformAttributeFunctor.cpp"
+Import "../osg.mod/src/osgUtil/TransformCallback.cpp"
+Import "../osg.mod/src/osgUtil/TriStrip_tri_stripper.cpp"
+Import "../osg.mod/src/osgUtil/TriStripVisitor.cpp"
+Import "../osg.mod/src/osgUtil/UpdateVisitor.cpp"
+Import "../osg.mod/src/osgUtil/Version.cpp"

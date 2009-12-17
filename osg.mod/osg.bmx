@@ -28,7 +28,4 @@ ModuleInfo "License: OpenSceneGraph Public License (OSGPL)"
 ModuleInfo "History: 0.01 Release"
 ModuleInfo "History: beastly build"
 
-
-Import "coreimports.bmx"
-
-'Import "osgplugins.bmx" - not yet implemented
+Import "imports.bmx"

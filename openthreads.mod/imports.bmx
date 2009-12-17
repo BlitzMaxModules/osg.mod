@@ -16,7 +16,6 @@ Import "../osg.mod/include/*.h"
 Import "../osg.mod/src/OpenThreads/common/Atomic.cpp"
 Import "../osg.mod/src/OpenThreads/common/Version.cpp"
 
-
 ?win32
 Import "../osg.mod/src/OpenThreads/win32/WIN32Condition.cpp"
 Import "../osg.mod/src/OpenThreads/win32/Win32Mutex.cpp"
