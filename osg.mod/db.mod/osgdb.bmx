@@ -17,4 +17,3 @@ ModuleInfo "History: beastly build"
 
 Import "imports.bmx"
 
-'Import "osgplugins.bmx" - not yet implemented
