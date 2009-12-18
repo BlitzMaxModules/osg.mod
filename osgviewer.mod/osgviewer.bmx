@@ -33,7 +33,7 @@ graphicswindow_X11()
 
 ?MacOS
 Extern "C"
-Function graphicswindow_Cocoa()
+Function graphicswindow_Carbon()
 End Extern
-graphicswindow_Cocoa()
+graphicswindow_Carbon()
 ?
