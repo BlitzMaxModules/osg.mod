@@ -20,6 +20,10 @@ Import "../osg.mod/src/osgViewer/PixelBufferX11.cpp"
 Import "../osg.mod/src/osgViewer/GraphicsWindowWin32.cpp"
 Import "../osg.mod/src/osgViewer/PixelBufferWin32.cpp"
 ?
+?MacOS
+Import "../osg.mod/src/osgViewer/GraphicsWindowCarbon.cpp"
+Import "../osg.mod/src/osgViewer/PixelBufferCarbon.cpp"
+?
 Import "../osg.mod/src/osgViewer/HelpHandler.cpp"
 Import "../osg.mod/src/osgViewer/Renderer.cpp"
 Import "../osg.mod/src/osgViewer/Scene.cpp"

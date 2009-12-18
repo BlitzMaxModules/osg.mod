@@ -16,3 +16,24 @@ ModuleInfo "History: 0.01 Release"
 ModuleInfo "History: beastly build"
 
 Import "imports.bmx"
+
+?Win32
+Extern "C"
+Function graphicswindow_Win32()
+End Extern
+graphicswindow_Win32()
+?
+
+?Linux
+Extern "C"
+Function graphicswindow_X11()
+End Extern
+graphicswindow_X11()
+?
+
+?MacOS
+Extern "C"
+Function graphicswindow_Cocoa()
+End Extern
+graphicswindow_Cocoa()
+?
