@@ -9,6 +9,8 @@ ModuleInfo "CC_OPTS: -DOSG_LIBRARY_STATIC"
 ModuleInfo "CC_OPTS: -D_GLIBCXX_USE_WCHAR_T"
 ?
 
+Import osg.osgutil
+
 Import "../osg.mod/include/*.h"
 
 Import "../osg.mod/src/osgFX/AnisotropicLighting.cpp"
