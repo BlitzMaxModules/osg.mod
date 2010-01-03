@@ -1,5 +1,5 @@
 /*  -*-c++-*- 
- *  Copyright (C) 2008 Cedric Pinson <mornifle@plopbyte.net>
+ *  Copyright (C) 2008 Cedric Pinson <cedric.pinson@plopbyte.net>
  *
  * This library is open source and may be redistributed and/or modified under  
  * the terms of the OpenSceneGraph Public License (OSGPL) version 0.0 or 
@@ -17,6 +17,8 @@
 
 #include <osg/Vec3>
 #include <osg/NodeCallback>
+#include <osg/StateAttribute>
+#include <osg/Material>
 #include <osg/observer_ptr>
 #include <osgAnimation/AnimationManagerBase>
 #include <osgAnimation/Export>
@@ -24,23 +26,51 @@
 namespace osgAnimation 
 {
 
-    class OSGANIMATION_EXPORT AnimationUpdateCallback : public osg::NodeCallback
+    class AnimationUpdateCallbackBase : public virtual osg::Object
     {
-    protected:
-        osg::observer_ptr<osgAnimation::AnimationManagerBase> _manager;
-
     public:
-        AnimationUpdateCallback(const std::string& name = "") { setName(name); }
-        AnimationUpdateCallback(const AnimationUpdateCallback& apc,const osg::CopyOp& copyop);
-        osgAnimation::AnimationManagerBase* getAnimationManager();
-        virtual bool needLink() const = 0;
         virtual bool link(osgAnimation::Channel* channel) = 0;
-        virtual int link(osgAnimation::Animation* animation);
-        virtual void updateLink();
+        virtual int link(osgAnimation::Animation* animation) = 0;
     };
-  
 
-    class OSGANIMATION_EXPORT UpdateTransform : public AnimationUpdateCallback
+    template <class T>
+    class AnimationUpdateCallback : public AnimationUpdateCallbackBase, public T
+    {
+    public:
+        AnimationUpdateCallback() {}
+        AnimationUpdateCallback(const std::string& name) { T::setName(name);}
+        AnimationUpdateCallback(const AnimationUpdateCallback& apc,const osg::CopyOp& copyop):
+            T(apc, copyop) {}
+
+        META_Object(osgAnimation, AnimationUpdateCallback<T>);
+
+        const std::string& getName() const { return T::getName(); }
+        bool link(osgAnimation::Channel* channel) { return 0; }
+        int link(osgAnimation::Animation* animation)
+        {
+            if (T::getName().empty())
+                osg::notify(osg::WARN) << "An update callback has no name, it means it can link only with \"\" named Target, often an error" << std::endl;
+            int nbLinks = 0;
+            for (osgAnimation::ChannelList::iterator it = animation->getChannels().begin();
+                 it != animation->getChannels().end();
+                 it++)
+            {
+                std::string targetName = (*it)->getTargetName();
+                if (targetName == T::getName()) 
+                {
+                    AnimationUpdateCallbackBase* a = this;
+                    a->link((*it).get());
+                    nbLinks++;
+                }
+            }
+            return nbLinks;
+        }
+    };
+
+
+
+
+    class OSGANIMATION_EXPORT UpdateTransform : public AnimationUpdateCallback<osg::NodeCallback>
     {
     protected:
         osg::ref_ptr<osgAnimation::Vec3Target> _euler;
@@ -58,10 +88,33 @@ namespace osgAnimation
         virtual void operator()(osg::Node* node, osg::NodeVisitor* nv);
         void update(osg::MatrixTransform& mat);
         void update(osg::PositionAttitudeTransform& pat);
-        bool needLink() const;
         bool link(osgAnimation::Channel* channel);
+
+        osgAnimation::Vec3Target* getEuler() {return _euler.get();}
+        osgAnimation::Vec3Target* getPosition() {return _position.get();}
+        osgAnimation::Vec3Target* getScale() {return _scale.get();}
     };
 
+
+
+    class OSGANIMATION_EXPORT UpdateMaterial : public AnimationUpdateCallback<osg::StateAttributeCallback>
+    {
+    protected:
+        osg::ref_ptr<osgAnimation::Vec4Target> _diffuse;
+    
+    public:
+
+        META_Object(osgAnimation, UpdateMaterial);
+
+        UpdateMaterial(const std::string& name = "");
+        UpdateMaterial(const UpdateMaterial& apc,const osg::CopyOp& copyop);
+
+        /** Callback method called by the NodeVisitor when visiting a node.*/
+        virtual void operator () (osg::StateAttribute*, osg::NodeVisitor*);
+        void update(osg::Material& material);
+        bool link(osgAnimation::Channel* channel);
+        osgAnimation::Vec4Target* getDiffuse();
+    };
 
 }
 

@@ -78,6 +78,13 @@ class OSGGA_EXPORT TrackballManipulator : public MatrixManipulator
         /** get the minimum distance (as ratio) the eye point can be zoomed in */
         double getMinimumZoomScale() const { return _minimumZoomScale; }
 
+        /** set the mouse scroll wheel zoom delta.
+          * Range -1.0 to +1.0,  -ve value inverts wheel direction and zero switches off scroll wheel. */
+        void setScroolWheelZoomDelta(double zoomDelta) { _zoomDelta = zoomDelta; }
+
+        /** get the mouse scroll wheel zoom delta. */
+        double getScroolWheelZoomDelta() const { return _zoomDelta; }
+
         /** Set the center of the trackball. */
         void setCenter(const osg::Vec3d& center) { _center = center; }
 
@@ -101,6 +108,12 @@ class OSGGA_EXPORT TrackballManipulator : public MatrixManipulator
 
         /** Get the size of the trackball. */
         float getTrackballSize() const { return _trackballSize; }
+
+        /** Set the 'allow throw' flag. Releasing the mouse button while moving the camera results in a throw. */
+        void setAllowThrow(bool allowThrow) { _allowThrow = allowThrow; }
+
+        /** Returns true if the camera can be thrown, false otherwise. This defaults to true. */
+        bool getAllowThrow() const { return _allowThrow; }
     protected:
 
         virtual ~TrackballManipulator();
@@ -133,12 +146,25 @@ class OSGGA_EXPORT TrackballManipulator : public MatrixManipulator
         double _modelScale;
         double _minimumZoomScale;
 
+        bool _allowThrow;
         bool _thrown;
-        
+
+        /** The approximate amount of time it is currently taking to draw a frame.
+          * This is used to compute the delta in translation/rotation during a thrown display update.
+          * It allows us to match an delta in position/rotation independent of the rendering frame rate.
+          */
+        double _delta_frame_time; 
+
+        /** The time the last frame started.
+          * Used when _rate_sensitive is true so that we can match display update rate to rotation/translation rate.
+          */
+        double _last_frame_time;
+
         osg::Vec3d   _center;
         osg::Quat    _rotation;
         double       _distance;
         float        _trackballSize;
+        float        _zoomDelta;
 
 };
 

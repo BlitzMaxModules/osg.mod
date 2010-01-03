@@ -20,28 +20,27 @@
 #define OSGVIEWER_GRAPHICSWINDOWX11 1
 
 #include <osgViewer/GraphicsWindow>
+#include <osgViewer/api/X11/GraphicsHandleX11>
 
-#define GLX_GLXEXT_PROTOTYPES  1
-
-#include <X11/X.h>
-#include <GL/glx.h>
 #include <string.h>
 
 namespace osgViewer
 {
 
-class OSGVIEWER_EXPORT GraphicsWindowX11 : public osgViewer::GraphicsWindow
+class OSGVIEWER_EXPORT GraphicsWindowX11 : public osgViewer::GraphicsWindow, public osgViewer::GraphicsHandleX11
 {
     public:
 
         GraphicsWindowX11(osg::GraphicsContext::Traits* traits):
             _valid(false),
-            _display(0),
             _eventDisplay(0),
             _parent(0),
             _window(0),
             _visualInfo(0),
-            _glxContext(0),
+            #ifdef OSG_USE_EGL
+            _eglDisplay(0),
+            _eglSurface(0),
+            #endif
             _currentCursor(0),
             _initialized(false),
             _realized(false),
@@ -137,14 +136,12 @@ class OSGVIEWER_EXPORT GraphicsWindowX11 : public osgViewer::GraphicsWindow
     
         // X11 specific aces functions
 
-        Display* getDisplay() const { return _display; }
         Display* getEventDisplay() const { return _eventDisplay; }
         Display* getDisplayToUse() const ;
 
         
         Window& getParent() { return _parent; }
         Window& getWindow() { return _window; }
-        GLXContext& getGLXContext() { return _glxContext; }
 
         Cursor getCurrentCursor() { return _currentCursor; }
 
@@ -175,12 +172,15 @@ class OSGVIEWER_EXPORT GraphicsWindowX11 : public osgViewer::GraphicsWindow
         void flushKeyEvents();
         
         bool            _valid;
-        Display*        _display;
         Display*        _eventDisplay;
         Window          _parent;
         Window          _window;
         XVisualInfo*    _visualInfo;
-        GLXContext      _glxContext;
+
+        #ifdef OSG_USE_EGL
+        EGLDisplay      _eglDisplay;
+        EGLSurface      _eglSurface;
+        #endif
 
         Cursor          _currentCursor;
 

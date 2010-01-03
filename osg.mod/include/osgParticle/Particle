@@ -24,6 +24,7 @@
 #include <osg/Vec4>
 #include <osg/Matrix>
 #include <osg/GL>
+#include <osg/GLBeginEndAdapter>
 
 namespace osgParticle
 {
@@ -141,10 +142,10 @@ namespace osgParticle
         inline float getCurrentAlpha() const { return _current_alpha; }
         
         /// Get the s texture coordinate of the bottom left of the particle
-        inline const float getSTexCoord() const { return _s_coord; }
+        inline float getSTexCoord() const { return _s_coord; }
 
         /// Get the t texture coordinate of the bottom left of the particle
-        inline float getTCoord() const { return _t_coord; }
+        inline float getTTexCoord() const { return _t_coord; }
 
         /// Get width of texture tile
         inline int getTileS() const;
@@ -153,7 +154,7 @@ namespace osgParticle
         inline int getTileT() const;
         
         /// Get number of texture tiles
-        inline int getNumTiles() const { return _num_tile; }
+        inline int getNumTiles() const { return _end_tile - _start_tile + 1; }
         
         /** Kill the particle on next update
             NOTE: after calling this function, the <CODE>isAlive()</CODE> method will still 
@@ -234,19 +235,24 @@ namespace osgParticle
         bool update(double dt);
 
         /// Perform some pre-rendering tasks. Called automatically by particle systems.
-        inline void beginRender() const;
+        inline void beginRender(osg::GLBeginEndAdapter* gl) const;
         
         /// Render the particle. Called automatically by particle systems.
-        void render(const osg::Vec3& xpos, const osg::Vec3& px, const osg::Vec3& py, float scale = 1.0f) const;
+        void render(osg::GLBeginEndAdapter* gl, const osg::Vec3& xpos, const osg::Vec3& px, const osg::Vec3& py, float scale = 1.0f) const;
         
         /// Perform some post-rendering tasks. Called automatically by particle systems.
-        inline void endRender() const;
+        inline void endRender(osg::GLBeginEndAdapter* gl) const;
         
         /// Get the current (interpolated) polygon size. Valid only after the first call to update().
         inline float getCurrentSize() const;
         
-        /// Specify how the particle texture is tiled
-        inline void setTextureTile(int sTile, int tTile, int numTiles = 0);
+        /// Specify how the particle texture is tiled.
+        /// All tiles in the given range are sequentially displayed during the lifetime
+        /// of the particle. When no range is given, all tiles are displayed during the lifetime.
+        inline void setTextureTileRange(int sTile, int tTile, int startTile, int endTile);
+
+        /// Same as above, range starts at 0 and ends at end
+        inline void setTextureTile(int sTile, int tTile, int end = -1);
 
         /// Set the previous particle
         inline void setPreviousParticle(int previous) { _previousParticle = previous; }
@@ -298,7 +304,8 @@ namespace osgParticle
         
         float _s_tile;
         float _t_tile;
-        int _num_tile;
+        int _start_tile;
+        int _end_tile;
         int _cur_tile;
         float _s_coord;
         float _t_coord;
@@ -530,55 +537,70 @@ namespace osgParticle
         _massinv = 1 / m;
     }
     
-    inline void Particle::beginRender() const
+    inline void Particle::beginRender(osg::GLBeginEndAdapter* gl) const
     {
         switch (_shape)
         {
         case POINT:
-            glBegin(GL_POINTS);
+            gl->Begin(GL_POINTS);
             break;
         case QUAD:
-            glBegin(GL_QUADS);
+            gl->Begin(GL_QUADS);
             break;
         case LINE:
-            glBegin(GL_LINES);
+            gl->Begin(GL_LINES);
             break;
         default: ;
         }
     }
-    
-    inline void Particle::endRender() const
+
+    inline void Particle::endRender(osg::GLBeginEndAdapter* gl) const
     {
         switch (_shape)
-        {        
+        {
         case POINT:
         case QUAD:
         case LINE:
-            glEnd();
+            gl->End();
             break;
         default: ;
         }
     }
-    
+
     inline float Particle::getCurrentSize() const
     {
         return _current_size;
     }
-    
-    inline void Particle::setTextureTile(int sTile, int tTile, int numTiles)
+
+
+    inline void Particle::setTextureTile(int sTile, int tTile, int end)
     {
-        _s_tile = (sTile>0) ? 1.0f / static_cast<float>(sTile) : 1.0f;
-        _t_tile = (tTile>0) ? 1.0f / static_cast<float>(tTile) : 1.0f;
-        if (numTiles <= 0)
-        {
-            _num_tile = sTile * tTile;
-        }
-        else
-        {
-            _num_tile = numTiles;
-        }
+        setTextureTileRange(sTile, tTile, -1, end);
     }
 
+    inline void Particle::setTextureTileRange(int sTile, int tTile, int startTile, int endTile)
+    {
+       _s_tile = (sTile>0) ? 1.0f / static_cast<float>(sTile) : 1.0f;
+       _t_tile = (tTile>0) ? 1.0f / static_cast<float>(tTile) : 1.0f;
+       
+       if(startTile == -1)
+       {
+          _start_tile = 0;
+       }
+       else
+       {
+          _start_tile = startTile;
+       }
+
+       if(endTile == -1)
+       {
+          _end_tile = sTile * tTile;
+       }
+       else
+       {
+          _end_tile = endTile;
+       }
+    }
 
 }
 

@@ -36,8 +36,8 @@ class OSGDB_EXPORT Output : public osgDB::ofstream
         virtual ~Output();
 
        
-        void setOptions(const ReaderWriter::Options* options);
-        const ReaderWriter::Options* getOptions() const { return _options.get(); }
+        void setOptions(const Options* options);
+        const Options* getOptions() const { return _options.get(); }
 
         void setWriteOutDefaultValues(bool flag) { _writeOutDefaultValues = flag; }
         bool getWriteOutDefaultValues() const { return _writeOutDefaultValues; }
@@ -91,22 +91,27 @@ class OSGDB_EXPORT Output : public osgDB::ofstream
         virtual std::string getFileNameForOutput(const std::string& filename) const;
         const std::string& getFileName() const { return _filename; }
 
+        // Set and get if export texture files during write
         void setOutputTextureFiles(bool flag) { _outputTextureFiles = flag; }
         bool getOutputTextureFiles() const { return _outputTextureFiles; }
 
+        // support code for OutputTextureFiles
         virtual std::string getTextureFileNameForOutput();
 
         void setOutputShaderFiles(bool flag) { _outputShaderFiles = flag; }
         bool getOutputShaderFiles() const { return _outputShaderFiles; }
 
         virtual std::string getShaderFileNameForOutput();
-        
+
+        void setExternalFileWritten(const std::string& filename, bool hasBeenWritten=true);
+        bool getExternalFileWritten(const std::string& filename) const;
+
     protected:
 
 
         virtual void init();
 
-        osg::ref_ptr<const ReaderWriter::Options> _options;
+        osg::ref_ptr<const Options> _options;
 
         int _indent;
         int _indentStep;
@@ -127,6 +132,9 @@ class OSGDB_EXPORT Output : public osgDB::ofstream
         unsigned int _shaderFileNameNumber;
 
         bool _writeOutDefaultValues;
+
+        typedef std::map<std::string, bool> ExternalFileWrittenMap;
+        ExternalFileWrittenMap _externalFileWritten;
 };
 
 }

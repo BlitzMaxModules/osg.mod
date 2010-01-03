@@ -73,6 +73,7 @@ class Vec4f;
 class Vec4ub;
 class Geometry;
 class NodeVisitor;
+class ArrayDispatchers;
 
 // this is defined to alter the way display lists are compiled inside the
 // the draw method, it has been found that the NVidia drivers fail completely
@@ -301,8 +302,8 @@ class OSG_EXPORT Drawable : public Object
           */
         inline void draw(RenderInfo& renderInfo) const;
 
-        /** Immediately compile this \c Drawable into an OpenGL Display List.
-          * @note Operation is ignored if \c _useDisplayList is \c false.
+        /** Immediately compile this \c Drawable into an OpenGL Display List/VertexBufferObjects.
+          * @note Operation is ignored if \c _useDisplayList is \c false or VertexBufferObjects are not used.
         */
         virtual void compileGLObjects(RenderInfo& renderInfo) const;
 
@@ -668,14 +669,16 @@ class OSG_EXPORT Drawable : public Object
 
         protected:
 
+            friend class ArrayDispatchers;
+
             typedef void (APIENTRY * FogCoordProc) (const GLfloat* coord);
 
-            typedef void (APIENTRY * VertexAttrib1sProc) (unsigned int index, GLshort s);
-            typedef void (APIENTRY * VertexAttrib1fProc) (unsigned int index, GLfloat f);
-            typedef void (APIENTRY * VertexAttrib1dProc) (unsigned int index, GLdouble f);
-            typedef void (APIENTRY * VertexAttribfvProc) (unsigned int index, const GLfloat * v);
-            typedef void (APIENTRY * VertexAttribdvProc) (unsigned int index, const GLdouble * v);
-            typedef void (APIENTRY * VertexAttribubvProc) (unsigned int index, const GLubyte * v);
+            typedef void (APIENTRY * VertexAttrib1sProc) (GLuint index, GLshort s);
+            typedef void (APIENTRY * VertexAttrib1fProc) (GLuint index, GLfloat f);
+            typedef void (APIENTRY * VertexAttrib1dProc) (GLuint index, GLdouble f);
+            typedef void (APIENTRY * VertexAttribfvProc) (GLuint index, const GLfloat * v);
+            typedef void (APIENTRY * VertexAttribdvProc) (GLuint index, const GLdouble * v);
+            typedef void (APIENTRY * VertexAttribubvProc) (GLuint index, const GLubyte * v);
 
             typedef void (APIENTRY * SecondaryColor3ubvProc) (const GLubyte* coord);
             typedef void (APIENTRY * SecondaryColor3fvProc) (const GLfloat* coord);
@@ -735,9 +738,11 @@ class OSG_EXPORT Drawable : public Object
             VertexAttrib1sProc _glVertexAttrib1s;
             VertexAttrib1fProc _glVertexAttrib1f;
             VertexAttrib1dProc _glVertexAttrib1d;
+            VertexAttribfvProc _glVertexAttrib1fv;
             VertexAttribfvProc _glVertexAttrib2fv;
             VertexAttribfvProc _glVertexAttrib3fv;
             VertexAttribfvProc _glVertexAttrib4fv;
+            VertexAttribdvProc _glVertexAttrib1dv;
             VertexAttribdvProc _glVertexAttrib2dv;
             VertexAttribdvProc _glVertexAttrib3dv;
             VertexAttribdvProc _glVertexAttrib4dv;
@@ -745,10 +750,12 @@ class OSG_EXPORT Drawable : public Object
             VertexAttribubvProc _glVertexAttrib4Nubv;
 
             MultiTexCoord1fProc _glMultiTexCoord1f;
+            MultiTexCoordfvProc _glMultiTexCoord1fv;
             MultiTexCoordfvProc _glMultiTexCoord2fv;
             MultiTexCoordfvProc _glMultiTexCoord3fv;
             MultiTexCoordfvProc _glMultiTexCoord4fv;
             MultiTexCoord1dProc _glMultiTexCoord1d;
+            MultiTexCoorddvProc _glMultiTexCoord1dv;
             MultiTexCoorddvProc _glMultiTexCoord2dv;
             MultiTexCoorddvProc _glMultiTexCoord3dv;
             MultiTexCoorddvProc _glMultiTexCoord4dv;
@@ -850,6 +857,7 @@ class OSG_EXPORT Drawable : public Object
 
 inline void Drawable::draw(RenderInfo& renderInfo) const
 {
+#ifdef OSG_GL_DISPLAYLISTS_AVAILABLE
     if (_useDisplayList && !(_supportsVertexBufferObjects && _useVertexBufferObjects && renderInfo.getState()->isVertexBufferObjectSupported()))
     {
         // get the contextID (user defined ID of 0 upwards) for the
@@ -890,6 +898,7 @@ inline void Drawable::draw(RenderInfo& renderInfo) const
         return;
 
     }
+#endif
 
     // draw object as nature intended..
     if (_drawCallback.valid())

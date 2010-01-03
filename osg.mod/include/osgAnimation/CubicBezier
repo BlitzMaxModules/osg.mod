@@ -1,5 +1,5 @@
 /*  -*-c++-*- 
- *  Copyright (C) 2008 Cedric Pinson <mornifle@plopbyte.net>
+ *  Copyright (C) 2008 Cedric Pinson <cedric.pinson@plopbyte.net>
  *
  * This library is open source and may be redistributed and/or modified under  
  * the terms of the OpenSceneGraph Public License (OSGPL) version 0.0 or 
@@ -36,12 +36,34 @@ namespace osgAnimation
             mPoint[1] = v1;
             mPoint[2] = v2;
         }
+        // Constructor with value only
+        TemplateCubicBezier(const T& v0) 
+        {
+            mPoint[0] = v0;
+            mPoint[1] = v0;
+            mPoint[2] = v0;
+        }
 
         TemplateCubicBezier() {}
 
         const T& getPosition() const { return mPoint[0];}
         const T& getTangentPoint1() const { return mPoint[1];}
         const T& getTangentPoint2() const { return mPoint[2];}
+        
+        // steaming operators.
+        friend std::ostream& operator << (std::ostream& output, const TemplateCubicBezier<T>& vec)
+        {
+            output << vec.mPoint[0] << " "
+                   << vec.mPoint[1] << " "
+                   << vec.mPoint[2];
+            return output; // to enable cascading
+        }
+
+        friend std::istream& operator >> (std::istream& input, TemplateCubicBezier<T>& vec)
+        {
+            input >> vec.mPoint[0] >> vec.mPoint[1] >> vec.mPoint[2];
+            return input;
+        }
     };
 
 

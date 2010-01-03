@@ -14,6 +14,7 @@
 #ifndef OSGUTIL_GLOBJECTSVISITOR
 #define OSGUTIL_GLOBJECTSVISITOR 1
 
+#include <OpenThreads/Mutex>
 #include <osg/NodeVisitor>
 #include <osg/Geode>
 #include <osg/State>
@@ -123,7 +124,7 @@ class OSGUTIL_EXPORT GLObjectsOperation : public osg::GraphicsOperation
         GLObjectsOperation(osg::Node* subgraph, GLObjectsVisitor::Mode mode = GLObjectsVisitor::COMPILE_DISPLAY_LISTS|GLObjectsVisitor::COMPILE_STATE_ATTRIBUTES|GLObjectsVisitor::CHECK_BLACK_LISTED_MODES);
 
         virtual void operator () (osg::GraphicsContext* context);
-
+        
     protected:
     
         osg::ref_ptr<osg::Node> _subgraph;

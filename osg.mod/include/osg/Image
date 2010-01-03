@@ -61,7 +61,7 @@ namespace osg {
 class NodeVisitor;
 
 /** Image class for encapsulating the storage texture image data. */
-class OSG_EXPORT Image : public Object
+class OSG_EXPORT Image : public BufferData
 {
 
     public :
@@ -76,6 +76,9 @@ class OSG_EXPORT Image : public Object
         virtual bool isSameKindAs(const Object* obj) const { return dynamic_cast<const Image*>(obj)!=0; }
         virtual const char* libraryName() const { return "osg"; }
         virtual const char* className() const { return "Image"; }
+
+        virtual const GLvoid*   getDataPointer() const { return data(); }
+        virtual unsigned int    getTotalDataSize() const { return getTotalSizeInBytesIncludingMipmaps(); }
 
         /** Return -1 if *this < *rhs, 0 if *this==*rhs, 1 if *this>*rhs. */
         virtual int compare(const Image& rhs) const;
@@ -106,13 +109,13 @@ class OSG_EXPORT Image : public Object
 
 
         /** Allocate a pixel block of specified size and type. */
-        void allocateImage(int s,int t,int r,
+        virtual void allocateImage(int s,int t,int r,
                            GLenum pixelFormat,GLenum type,
                            int packing=1);
         
         
         /** Set the image dimensions, format and data. */
-        void setImage(int s,int t,int r,
+        virtual void setImage(int s,int t,int r,
                       GLint internalTextureformat,
                       GLenum pixelFormat,GLenum type,
                       unsigned char* data,
@@ -122,21 +125,25 @@ class OSG_EXPORT Image : public Object
         /** Read pixels from current frame buffer at specified position and size, using glReadPixels.
           * Create memory for storage if required, reuse existing pixel coords if possible.
         */
-        void readPixels(int x,int y,int width,int height,
+        virtual void readPixels(int x,int y,int width,int height,
                         GLenum pixelFormat,GLenum type);
             
 
         /** Read the contents of the current bound texture, handling compressed pixelFormats if present.
           * Create memory for storage if required, reuse existing pixel coords if possible.
         */
-        void readImageFromCurrentTexture(unsigned int contextID, bool copyMipMapsIfAvailable, GLenum type = GL_UNSIGNED_BYTE);
+        virtual void readImageFromCurrentTexture(unsigned int contextID, bool copyMipMapsIfAvailable, GLenum type = GL_UNSIGNED_BYTE);
 
 
-        /** Scale image to specified size. */
+        /** Scale image to specified size.
+          * \warning The method uses gluScaleImage() and thus needs a valid rendering context.
+        */
         void scaleImage(int s,int t,int r) { scaleImage(s,t,r, getDataType()); }
 
-        /** Scale image to specified size and with specified data type. */
-        void scaleImage(int s,int t,int r, GLenum newDataType);
+        /** Scale image to specified size and with specified data type.
+          * \warning The method uses gluScaleImage() and thus needs a valid rendering context.
+        */
+        virtual void scaleImage(int s,int t,int r, GLenum newDataType);
 
         /** Copy a source Image into a subpart of this Image at specified position.
           * Typically used to copy to an already allocated image, such as creating
@@ -145,7 +152,7 @@ class OSG_EXPORT Image : public Object
           * accomodate the source image in its offset position.
           * If source is NULL then no operation happens, this Image is left unchanged.
         */
-        void copySubImage(int s_offset, int t_offset, int r_offset, const osg::Image* source);
+        virtual void copySubImage(int s_offset, int t_offset, int r_offset, const osg::Image* source);
 
 
         enum Origin 
@@ -185,6 +192,12 @@ class OSG_EXPORT Image : public Object
         
         void setPacking(unsigned int packing) { _packing = packing; }
         inline unsigned int getPacking() const { return _packing; }
+
+        /** Set the pixel aspect ratio, defined as the pixel width divided by the pixel height.*/
+        inline void setPixelAspectRatio(float pixelAspectRatio) { _pixelAspectRatio = pixelAspectRatio; }
+
+        /** Get the pixel aspect ratio.*/
+        inline float getPixelAspectRatio() const { return _pixelAspectRatio; }
         
         /** Return the number of bits required for each pixel. */
         inline unsigned int getPixelSizeInBits() const { return computePixelSizeInBits(_pixelFormat,_dataType); }
@@ -246,16 +259,6 @@ class OSG_EXPORT Image : public Object
           * the host machine.
         */
         void ensureValidSizeForTexturing(GLint maxTextureSize);
-      
-        /** Dirty the image, which increments the modified count, to force osg::Texture to reload the image. */
-        inline void dirty() { ++_modifiedCount; if (_bufferObject.valid()) _bufferObject->dirty(); }      
-      
-        /** Set the modified count value. Used by osg::Texture when using texture subloading. */
-        inline void setModifiedCount(unsigned int value) { _modifiedCount=value; }
-
-        /** Get modified count value. Used by osg::Texture when using texture subloading. */
-        inline unsigned int getModifiedCount() const { return _modifiedCount; }
-
 
         static bool isPackedType(GLenum type);
         static GLenum computePixelFormat(GLenum pixelFormat);
@@ -307,18 +310,18 @@ class OSG_EXPORT Image : public Object
         }*/
 
         /** Return true if this image is translucent - i.e. it has alpha values that are less 1.0 (when normalized). */
-        bool isImageTranslucent() const;
+        virtual bool isImageTranslucent() const;
 
         /** Set the optional PixelBufferObject used to map the image memory efficiently to graphics memory. */ 
-        void setPixelBufferObject(PixelBufferObject* buffer) { _bufferObject = buffer; if (_bufferObject.valid()) _bufferObject->setImage(this); }
+        void setPixelBufferObject(PixelBufferObject* buffer) { setBufferObject(buffer); }
 
-        /** Get the PixelBufferObject.*/ 
-        PixelBufferObject* getPixelBufferObject() { return _bufferObject.get(); }
+        /** Get the PixelBufferObject.*/
+        PixelBufferObject* getPixelBufferObject() { return dynamic_cast<PixelBufferObject*>(_bufferObject.get()); }
 
-        /** Get the const PixelBufferObject.*/ 
-        const PixelBufferObject* getPixelBufferObject() const { return _bufferObject.get(); }
+        /** Get the const PixelBufferObject.*/
+        const PixelBufferObject* getPixelBufferObject() const { return dynamic_cast<const PixelBufferObject*>(_bufferObject.get()); }
        
-        virtual void update(NodeVisitor* /*nv*/) {}        
+        virtual void update(NodeVisitor* /*nv*/) {}
 
         /** method for sending pointer events to images that are acting as front ends to interactive surfaces such as a vnc or browser window.  Return true if handled. */
         virtual bool sendPointerEvent(int /*x*/, int /*y*/, int /*buttonMask*/) { return false; }
@@ -346,6 +349,7 @@ class OSG_EXPORT Image : public Object
         GLenum _pixelFormat;
         GLenum _dataType;
         unsigned int _packing;
+        float _pixelAspectRatio;
 
         AllocationMode _allocationMode;
         unsigned char* _data;
@@ -353,8 +357,6 @@ class OSG_EXPORT Image : public Object
         void deallocateData();
         
         void setData(unsigned char* data,AllocationMode allocationMode);
-
-        unsigned int _modifiedCount;
 
         MipmapDataType _mipmapData;
         

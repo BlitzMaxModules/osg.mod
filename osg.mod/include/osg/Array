@@ -43,7 +43,7 @@ class ConstArrayVisitor;
 class ValueVisitor;
 class ConstValueVisitor;
 
-class OSG_EXPORT Array : public Object
+class OSG_EXPORT Array : public BufferData
 {
 
     public:
@@ -71,28 +71,24 @@ class OSG_EXPORT Array : public Object
             DoubleArrayType   = 18,
             Vec2dArrayType    = 19,
             Vec3dArrayType    = 20,
-            Vec4dArrayType    = 21            
+            Vec4dArrayType    = 21
         };
 
         Array(Type arrayType=ArrayType,GLint dataSize=0,GLenum dataType=0):
             _arrayType(arrayType),
             _dataSize(dataSize),
-            _dataType(dataType),
-            _modifiedCount(0),
-            _vboOffset(0) {}
-    
+            _dataType(dataType) {}
+
         Array(const Array& array,const CopyOp& copyop=CopyOp::SHALLOW_COPY):
-            Object(array,copyop),
+            BufferData(array,copyop),
             _arrayType(array._arrayType),
             _dataSize(array._dataSize),
-            _dataType(array._dataType),
-            _modifiedCount(0),
-            _vboOffset(0) {}
+            _dataType(array._dataType) {}
 
         virtual bool isSameKindAs(const Object* obj) const { return dynamic_cast<const Array*>(obj)!=NULL; }
         virtual const char* libraryName() const { return "osg"; }
         virtual const char* className() const;
-        
+
         virtual void accept(ArrayVisitor&) = 0;
         virtual void accept(ConstArrayVisitor&) const = 0;
 
@@ -113,79 +109,40 @@ class OSG_EXPORT Array : public Object
         /** Frees unused space on this vector - i.e. the difference between size() and max_size() of the underlying vector.*/
         virtual void trim() {}
 
-        /** Dirty the primitive, which increments the modified count, to force buffer objects to update. */
-        inline void dirty() { ++_modifiedCount; if (_vbo.valid()) _vbo->dirty(); }
-      
-        /** Set the modified count value.*/
-        inline void setModifiedCount(unsigned int value) { _modifiedCount=value; }
-
-        /** Get modified count value.*/
-        inline unsigned int getModifiedCount() const { return _modifiedCount; }
-
         /** Set the VertexBufferObject.*/
-        inline void setVertexBufferObject(osg::VertexBufferObject* vbo)
-        {
-            if (_vbo == vbo) return;
-            
-            if (_vbo.valid())
-            {
-                _vbo->removeArray(this);
-            }
-            
-            _vbo = vbo;
-            
-            if (_vbo.valid())
-            {
-                _vbo->addArray(this);
-            }
-        }
-        
+        inline void setVertexBufferObject(osg::VertexBufferObject* vbo) { setBufferObject(vbo); }
+
         /** Get the VertexBufferObject. If no VBO is assigned returns NULL*/
-        inline osg::VertexBufferObject* getVertexBufferObject() { return _vbo.get(); }
+        inline osg::VertexBufferObject* getVertexBufferObject() { return dynamic_cast<osg::VertexBufferObject*>(_bufferObject.get()); }
 
         /** Get the const VertexBufferObject. If no VBO is assigned returns NULL*/
-        inline const osg::VertexBufferObject* getVertexBufferObject() const { return _vbo.get(); }
-
-        /** Set the offset into the VertexBufferObject, if used.*/
-        void setVertexBufferObjectOffset(const GLvoid* offset ) const { _vboOffset = offset; }
-
-        /** Get the offset into the VertexBufferObject, if used.*/
-        const GLvoid* getVertexBufferObjectOffset() const { return _vboOffset; }
+        inline const osg::VertexBufferObject* getVertexBufferObject() const { return dynamic_cast<const osg::VertexBufferObject*>(_bufferObject.get());  }
 
     protected:
-    
-        virtual ~Array()
-        {
-            if (_vbo.valid())
-            {
-                _vbo->removeArray(this);
-            }
-        }
+
+        virtual ~Array() {}
 
         Type                                    _arrayType;
         GLint                                   _dataSize;
         GLenum                                  _dataType;
-        unsigned int                            _modifiedCount;
-        osg::ref_ptr<osg::VertexBufferObject>   _vbo;
-        mutable const GLvoid*                   _vboOffset;
 };
 
 template<typename T, Array::Type ARRAYTYPE, int DataSize, int DataType>
 class TemplateArray : public Array, public MixinVector<T>
 {
     public:
-    
+
         TemplateArray() : Array(ARRAYTYPE,DataSize,DataType) {}
 
         TemplateArray(const TemplateArray& ta,const CopyOp& copyop=CopyOp::SHALLOW_COPY):
             Array(ta,copyop),
             MixinVector<T>(ta) {}
-        
+
         TemplateArray(unsigned int no) : 
             Array(ARRAYTYPE,DataSize,DataType),
             MixinVector<T>(no) {}
 
-        TemplateArray(unsigned int no,T* ptr) : 
+        TemplateArray(unsigned int no,const T* ptr) : 
             Array(ARRAYTYPE,DataSize,DataType),
             MixinVector<T>(ptr,ptr+no) {}
 
@@ -224,7 +181,7 @@ class TemplateArray : public Array, public MixinVector<T>
         {
             MixinVector<T>( *this ).swap( *this );
         }
-        
+
         virtual const GLvoid*   getDataPointer() const { if (!this->empty()) return &this->front(); else return 0; }
         virtual unsigned int    getTotalDataSize() const { return static_cast<unsigned int>(this->size()*sizeof(T)); }
         virtual unsigned int    getNumElements() const { return static_cast<unsigned int>(this->size()); }
@@ -243,16 +200,16 @@ class OSG_EXPORT IndexArray : public Array
 
         IndexArray(Type arrayType=ArrayType,GLint dataSize=0,GLenum dataType=0):
             Array(arrayType,dataSize,dataType) {}
-    
+
         IndexArray(const Array& array,const CopyOp& copyop=CopyOp::SHALLOW_COPY):
             Array(array,copyop) {}
 
         virtual bool isSameKindAs(const Object* obj) const { return dynamic_cast<const IndexArray*>(obj)!=NULL; }
-        
+
         virtual unsigned int index(unsigned int pos) const = 0;
 
     protected:
-    
+
         virtual ~IndexArray() {}
 };
 
@@ -260,13 +217,13 @@ template<typename T, Array::Type ARRAYTYPE, int DataSize, int DataType>
 class TemplateIndexArray : public IndexArray, public MixinVector<T>
 {
     public:
-    
+
         TemplateIndexArray() : IndexArray(ARRAYTYPE,DataSize,DataType) {}
 
         TemplateIndexArray(const TemplateIndexArray& ta,const CopyOp& copyop=CopyOp::SHALLOW_COPY):
             IndexArray(ta,copyop),
             MixinVector<T>(ta) {}
-        
+
         TemplateIndexArray(unsigned int no) : 
             IndexArray(ARRAYTYPE,DataSize,DataType),
             MixinVector<T>(no) {}
@@ -310,7 +267,7 @@ class TemplateIndexArray : public IndexArray, public MixinVector<T>
         {
             MixinVector<T>( *this ).swap( *this );
         }
-        
+
         virtual const GLvoid*   getDataPointer() const { if (!this->empty()) return &this->front(); else return 0; }
         virtual unsigned int    getTotalDataSize() const { return static_cast<unsigned int>(this->size()*sizeof(T)); }
         virtual unsigned int    getNumElements() const { return static_cast<unsigned int>(this->size()); }
@@ -320,7 +277,7 @@ class TemplateIndexArray : public IndexArray, public MixinVector<T>
         typedef T ElementDataType; // expose T
 
     protected:
-    
+
         virtual ~TemplateIndexArray() {}
 };
 

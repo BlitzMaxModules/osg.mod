@@ -236,8 +236,6 @@ class Vec4f
 
 };    // end of class Vec4f
 
-
-
 /** Compute the dot product of a (Vec3,1.0) and a Vec4f. */
 inline Vec4f::value_type operator * (const Vec3f& lhs,const Vec4f& rhs)
 {
@@ -248,6 +246,18 @@ inline Vec4f::value_type operator * (const Vec3f& lhs,const Vec4f& rhs)
 inline Vec4f::value_type operator * (const Vec4f& lhs,const Vec3f& rhs)
 {
     return lhs[0]*rhs[0]+lhs[1]*rhs[1]+lhs[2]*rhs[2]+lhs[3];
+}
+
+/** multiply by vector components. */
+inline Vec4f componentMultiply(const Vec4f& lhs, const Vec4f& rhs)
+{
+    return Vec4f(lhs[0]*rhs[0], lhs[1]*rhs[1], lhs[2]*rhs[2], lhs[3]*rhs[3]);
+}
+
+/** divide rhs components by rhs vector components. */
+inline Vec4f componentDivide(const Vec4f& lhs, const Vec4f& rhs)
+{
+    return Vec4f(lhs[0]/rhs[0], lhs[1]/rhs[1], lhs[2]/rhs[2], lhs[3]/rhs[3]);
 }
 
 }    // end of namespace osg

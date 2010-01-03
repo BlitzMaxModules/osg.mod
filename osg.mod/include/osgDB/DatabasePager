@@ -28,7 +28,7 @@
 
 #include <osgDB/SharedStateManager>
 #include <osgDB/ReaderWriter>
-#include <osgDB/Export>
+#include <osgDB/Options>
 
 #include <map>
 #include <list>
@@ -65,12 +65,8 @@ class OSGDB_EXPORT DatabasePager : public osg::NodeVisitor::DatabaseRequestHandl
         /** Add a request to load a node file to end the the database request list.*/
         virtual void requestNodeFile(const std::string& fileName,osg::Group* group,
                                      float priority, const osg::FrameStamp* framestamp,
-                                     osg::ref_ptr<osg::Referenced>& databaseRequest);
-
-        virtual void requestNodeFile(const std::string& fileName,osg::Group* group,
-                                     float priority, const osg::FrameStamp* framestamp,
                                      osg::ref_ptr<osg::Referenced>& databaseRequest,
-                                     ReaderWriter::Options* loadOptions);
+                                     const osg::Referenced* options);
 
         /** Set the priority of the database pager thread(s).*/
         int setSchedulePriority(OpenThreads::Thread::ThreadPriority priority);
@@ -328,7 +324,7 @@ class OSGDB_EXPORT DatabasePager : public osg::NodeVisitor::DatabaseRequestHandl
         double getMaximumTimeToMergeTile() const { return _maximumTimeToMergeTile; }
 
         /** Get the average time between the first request for a tile to be loaded and the time of its merge into the main scene graph.*/
-        double getAverageTimeToMergeTiles() const { return _totalTimeToMergeTiles/static_cast<double>(_numTilesMerges); }
+        double getAverageTimeToMergeTiles() const { return (_numTilesMerges > 0) ? _totalTimeToMergeTiles/static_cast<double>(_numTilesMerges) : 0; }
 
         /** Reset the Stats variables.*/
         void resetStats();
@@ -375,7 +371,7 @@ class OSGDB_EXPORT DatabasePager : public osg::NodeVisitor::DatabaseRequestHandl
             osg::observer_ptr<osg::Group>       _groupForAddingLoadedSubgraph;
             osg::ref_ptr<osg::Node>             _loadedModel;
             DataToCompileMap                    _dataToCompileMap;
-            osg::ref_ptr<ReaderWriter::Options> _loadOptions;
+            osg::ref_ptr<Options> _loadOptions;
             RequestQueue*                       _requestQueue;
 
             bool isRequestCurrent (int frameNumber) const
@@ -499,16 +495,26 @@ class OSGDB_EXPORT DatabasePager : public osg::NodeVisitor::DatabaseRequestHandl
         inline static bool isCompiled(const osg::Drawable* drawable,
                                       unsigned int contextID)
         {
-            // Worry about vbos later
-            if (drawable->getUseDisplayList())
+            if (drawable->getUseVertexBufferObjects())
+            {
+                // say it's not compiled leaving it up to the compileGLObjects() to handle.
+                return false;
+            }
+            else if (drawable->getUseDisplayList())
             {
                 return drawable->getDisplayList(contextID) != 0;
             }
+
             return true;
         }
 
         inline bool isCompiled(const osg::Drawable* drawable) const
         {
+            if (drawable->getUseVertexBufferObjects())
+            {
+                // say it's not compiled leaving it up to the compileGLObjects() to handle.
+                return false;
+            }
             if (drawable->getUseDisplayList())
             {
                 for (ActiveGraphicsContexts::const_iterator iter=_activeGraphicsContexts.begin();
